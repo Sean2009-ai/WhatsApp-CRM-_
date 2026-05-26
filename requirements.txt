@@ -1,4 +1,4 @@
-flask==3.03
+flask==3.0.3
 twilio==9.3.2
 requests==2.32.3
 python-dotenv==1.0.1
