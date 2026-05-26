@@ -1,0 +1,5 @@
+flask==3.03
+twilio==9.3.2
+requests==2.32.3
+python-dotenv==1.0.1
+gunicorn==22.0.0
