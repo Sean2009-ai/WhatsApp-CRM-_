@@ -740,6 +740,22 @@ def test_ai():
 
     history = session.get("chat_history", [])
     return render_template_string(CHAT_HTML, history=history)
+  @app.route("/submit-onboarding", methods=["POST"])
+def submit_onboarding():
+    data = request.json
+    message = (
+        f"🆕 *Nouvelle commande !*\n\n"
+        f"🏪 *Boutique:* {data.get('nom_boutique')}\n"
+        f"📍 *Ville:* {data.get('ville')}\n"
+        f"📱 *WhatsApp:* {data.get('whatsapp')}\n"
+        f"💰 *Orange Money:* {data.get('orange_money')}\n"
+        f"📧 *Email:* {data.get('email')}\n"
+        f"🛍️ *Produits:* {data.get('produits')}\n"
+        f"💎 *Formule:* {data.get('tarif')}\n"
+        f"📝 *Message:* {data.get('message_perso')}"
+    )
+    envoyer_message_whatsapp("whatsapp:+22670XXXXXXX", message)
+    return jsonify({"status": "ok"})
 
 
 @app.route("/test-ai/clear", methods=["POST"])
