@@ -749,6 +749,11 @@ def test_ai_clear():
     return redirect(url_for("test_ai"))
 
 
+@app.route("/onboarding")
+def onboarding():
+    with open("onboarding.html", "r", encoding="utf-8") as f:
+        return f.read()
+      
 @app.route("/")
 def index():
     return jsonify({
