@@ -751,7 +751,9 @@ def test_ai_clear():
 
 @app.route("/onboarding")
 def onboarding():
-    with open("onboarding.html", "r", encoding="utf-8") as f:
+    import os
+    chemin = os.path.join(os.path.dirname(__file__), "..", "onboarding.html")
+    with open(chemin, "r", encoding="utf-8") as f:
         return f.read()
       
 @app.route("/")
