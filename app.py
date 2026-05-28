@@ -70,21 +70,23 @@ Termine avec: [PRET_PAIEMENT:nom|numero|montant]
 else:
     prompt = SYSTEM_PROMPT
 
+
+# Appel à Groq
 reponse_ia = ask_groq(historique_recent, prompt)
-    """
-    Appelle l'API Groq pour générer une réponse intelligente.
-    conversation_history: liste de messages [{role, content}]
-    """
-    headers = {
-        "Authorization": f"Bearer {GROQ_API_KEY}",
-        "Content-Type": "application/json"
-    }
-    messages = [{"role": "system", "content": system_prompt}] + conversation_history
-    payload = {
-        "model": "llama-3.3-70b-versatile",
-        "max_tokens": 500,
-        "messages": messages
-    }
+
+# === Configuration de l'appel API ===
+headers = {
+    "Authorization": f"Bearer {GROQ_API_KEY}",
+    "Content-Type": "application/json"
+}
+
+messages = [{"role": "system", "content": system_prompt}] + conversation_history
+
+payload = {
+    "model": "llama-3.3-70b-versatile",
+    "max_tokens": 500,
+    "messages": messages
+}
     try:
         resp = requests.post(
             "https://api.groq.com/openai/v1/chat/completions",
