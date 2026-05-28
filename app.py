@@ -99,9 +99,8 @@ try:
 except Exception as e:
     print(f"[ERREUR IA] {e}")
     return "Désolé, je rencontre un problème technique. Réessaie dans un instant 🙏"
-        return "Désolé, je rencontre un problème technique. Réessaie dans un instant 🙏"
 
-# Prompt système pour le bot commercial
+Prompt système pour le bot commercial
 SYSTEM_PROMPT = """
 Tu es Amina, une assistante commerciale virtuelle d'une boutique en ligne au Burkina Faso.
 Tu réponds uniquement en français simple et chaleureux, style Afrique de l'Ouest.
