@@ -389,7 +389,7 @@ function choisirTarif(el, valeur) {
   el.querySelector('input[type="radio"]').checked = true;
 }
 
-function soumettre() {
+async function soumettre() {
   const nom = document.getElementById('nom_boutique').value.trim();
   const ville = document.getElementById('ville').value;
   const whatsapp = document.getElementById('whatsapp').value.trim();
@@ -401,28 +401,21 @@ function soumettre() {
     return;
   }
 
-  // Collecter les produits
   const noms = document.querySelectorAll('.prod-nom');
   const prix = document.querySelectorAll('.prod-prix');
   const produits = [];
   noms.forEach((n, i) => {
     if (n.value.trim()) {
-      produits.push({ nom: n.value.trim(), prix: prix[i].value || '0' });
+      produits.push(n.value.trim() + ' - ' + prix[i].value + ' FCFA');
     }
   });
 
   const tarif = document.querySelector('input[name="tarif"]:checked').value;
-  const ref = 'CMD-' + Date.now().toString().slice(-6);
 
-  // Afficher succès
+  window.open(`https://wa.me/22603141464?text=Nouvelle boutique: ${nom} | Ville: ${ville} | WhatsApp: ${whatsapp} | Orange Money: ${orange} | Produits: ${produits.join(', ')} | Formule: ${tarif}`, '_blank');
+
   document.getElementById('formulaire').style.display = 'none';
   document.getElementById('succes').style.display = 'block';
-  document.getElementById('ref-commande').textContent = ref;
-
-  console.log('Nouvelle commande:', {
-    ref, nom, ville, whatsapp, orange, email, produits, tarif,
-    message: document.getElementById('message_perso').value
-  });
 }
 </script>
 
