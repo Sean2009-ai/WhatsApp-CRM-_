@@ -741,7 +741,7 @@ def test_ai():
     history = session.get("chat_history", [])
     return render_template_string(CHAT_HTML, history=history)
 
-@app.route("/submit-onboarding", methods=["POST"])
+app.route("/submit-onboarding", methods=["POST"])
 def submit_onboarding():
     data = request.json
     message = (
