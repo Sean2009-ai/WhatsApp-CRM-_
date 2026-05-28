@@ -87,17 +87,18 @@ payload = {
     "max_tokens": 500,
     "messages": messages
 }
-    try:
-        resp = requests.post(
-            "https://api.groq.com/openai/v1/chat/completions",
-            headers=headers,
-            json=payload,
-            timeout=15
-        )
-        resp.raise_for_status()
-        return resp.json()["choices"][0]["message"]["content"]
-    except Exception as e:
-        print(f"[ERREUR IA] {e}")
+try:
+    resp = requests.post(
+        "https://api.groq.com/openai/v1/chat/completions",
+        headers=headers,
+        json=payload,
+        timeout=15
+    )
+    resp.raise_for_status()
+    return resp.json()["choices"][0]["message"]["content"]
+except Exception as e:
+    print(f"[ERREUR IA] {e}")
+    return "Désolé, je rencontre un problème technique. Réessaie dans un instant 🙏"
         return "Désolé, je rencontre un problème technique. Réessaie dans un instant 🙏"
 
 # Prompt système pour le bot commercial
