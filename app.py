@@ -740,7 +740,8 @@ def test_ai():
 
     history = session.get("chat_history", [])
     return render_template_string(CHAT_HTML, history=history)
-  @app.route("/submit-onboarding", methods=["POST"])
+
+@app.route("/submit-onboarding", methods=["POST"])
 def submit_onboarding():
     data = request.json
     message = (
@@ -754,7 +755,7 @@ def submit_onboarding():
         f"💎 *Formule:* {data.get('tarif')}\n"
         f"📝 *Message:* {data.get('message_perso')}"
     )
-    envoyer_message_whatsapp("whatsapp:+22670XXXXXXX", message)
+    envoyer_message_whatsapp("whatsapp:+22603141464", message)
     return jsonify({"status": "ok"})
 
 
@@ -763,7 +764,7 @@ def test_ai_clear():
     """Efface l'historique de conversation du test-ai."""
     session.pop("chat_history", None)
     return redirect(url_for("test_ai"))
-
+  
 
 @app.route("/onboarding")
 def onboarding():
