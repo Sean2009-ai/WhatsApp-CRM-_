@@ -52,7 +52,25 @@ def save_db(data):
 # =============================================
 # MODULE IA - GROQ POUR QUALIFIER LES CLIENTS
 # =============================================
-def ask_groq(conversation_history: list, system_prompt: str) -> str:
+# Charger les infos de la boutique si disponibles
+boutique_id = from_number.replace("whatsapp:+", "").replace(" ", "")
+db_temp = load_db()
+boutique = db_temp.get("boutiques", {}).get(boutique_id)
+
+if boutique:
+    prompt = f"""
+Tu es Amina, assistante commerciale de {boutique['nom']} à {boutique['ville']}, Burkina Faso.
+Tu réponds en français chaleureux style Afrique de l'Ouest.
+Produits disponibles: {boutique['produits']}
+Livraison gratuite au-dessus de 20 000 FCFA, sinon 2 000 FCFA.
+{boutique.get('message_perso', '')}
+Quand le client veut payer, collecte NOM, NUMÉRO MOBILE MONEY, MONTANT.
+Termine avec: [PRET_PAIEMENT:nom|numero|montant]
+"""
+else:
+    prompt = SYSTEM_PROMPT
+
+reponse_ia = ask_groq(historique_recent, prompt)
     """
     Appelle l'API Groq pour générer une réponse intelligente.
     conversation_history: liste de messages [{role, content}]
