@@ -140,11 +140,38 @@ def health():
 # =============================================
 @app.route("/webhook/whatsapp", methods=["POST"])
 def webhook_whatsapp():
+
     from_number = request.form.get("From", "")
     message_body = request.form.get("Body", "").strip()
+
     print(f"[MESSAGE] {from_number}: {message_body}")
 
     db = load_db()
+
+    # ===== RÉCUPÉRATION LOCALISATION =====
+
+    latitude = request.form.get("Latitude")
+    longitude = request.form.get("Longitude")
+
+    if latitude and longitude:
+
+        # Sauvegarder dans le client
+        if from_number not in db["clients"]:
+            db["clients"][from_number] = {}
+
+        db["clients"][from_number]["localisation"] = {
+            "latitude": latitude,
+            "longitude": longitude
+        }
+
+        save_db(db)
+
+        resp = MessagingResponse()
+        resp.message("📍 Localisation reçue avec succès ! Merci 🙌")
+
+        return str(resp)
+
+    # =====================================
 
     # Créer profil client si nouveau
     if from_number not in db["clients"]:
@@ -155,12 +182,17 @@ def webhook_whatsapp():
         }
 
     client_data = db["clients"][from_number]
-    client_data["historique"].append({"role": "user", "content": message_body})
+
+    client_data["historique"].append({
+        "role": "user",
+        "content": message_body
+    })
+
     historique_recent = client_data["historique"][-10:]
 
-    # Trouver la boutique du client
+    # Trouver la boutique
     boutique_id = from_number.replace("whatsapp:+", "")
-    boutique = db.get("boutiques", {}).get(boutique_id)
+    boutique = db.get("boutiques", {}).get(boutique_id)    boutique = db.get("boutiques", {}).get(boutique_id)
 
     if boutique:
         prompt = f"""
