@@ -220,3 +220,46 @@ def index():
 @app.route("/onboarding")
 def onboarding():
     return send_from_directory('.', 'onboarding.html')
+@app.route("/admin")
+def admin_dashboard():
+
+    db = load_db()
+
+    boutiques = db.get("boutiques", {})
+    commandes = db.get("commandes", [])
+
+    total_payees = sum(
+        1 for c in commandes
+        if c.get("statut") == "ACCEPTED"
+    )
+
+    revenus_total = sum(
+        c.get("montant", 0)
+        for c in commandes
+        if c.get("statut") == "ACCEPTED"
+    )
+
+    # Stats par boutique
+    for boutique_id, b in boutiques.items():
+
+        commandes_boutique = [
+            c for c in commandes
+            if c.get("boutique_id") == boutique_id
+        ]
+
+        b["nb_commandes"] = len(commandes_boutique)
+
+        b["revenus"] = sum(
+            c.get("montant", 0)
+            for c in commandes_boutique
+            if c.get("statut") == "ACCEPTED"
+        )
+
+    return render_template_string(
+        ADMIN_HTML,
+        boutiques=boutiques,
+        total_boutiques=len(boutiques),
+        total_commandes=len(commandes),
+        total_payees=total_payees,
+        revenus_total=f"{revenus_total:,} FCFA"
+    )
