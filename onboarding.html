@@ -358,12 +358,25 @@
 
 <!-- Succès -->
 <div class="success" id="succes">
+ <div class="success" id="succes">
   <div class="icon">🎉</div>
-  <h2>Demande envoyée !</h2>
-  <p>Nous vous contacterons sur WhatsApp dans les <strong>24 heures</strong> pour activer votre boutique.</p>
+  <h2>Boutique créée !</h2>
+  <p>Voici vos informations d'activation :</p>
   <br>
-  <p style="color: #555; font-size: 0.85rem;">Réf: <span id="ref-commande"></span></p>
-</div>
+  <div style="background:#1A1A1A;border-radius:12px;padding:16px;margin:12px 0;text-align:left">
+    <p style="color:#888;font-size:0.8rem">📱 NUMÉRO WHATSAPP BOT</p>
+    <p style="color:#25D366;font-size:1.2rem;font-weight:800">+1 415 523 8886</p>
+  </div>
+  <div style="background:#1A1A1A;border-radius:12px;padding:16px;margin:12px 0;text-align:left">
+    <p style="color:#888;font-size:0.8rem">🔑 CODE D'ACTIVATION</p>
+    <p style="color:#FFD700;font-size:1rem;font-weight:800">join furniture-scared</p>
+    <p style="color:#666;font-size:0.75rem;margin-top:4px">Envoie ce code sur WhatsApp pour activer ton bot</p>
+  </div>
+  <div style="background:#1A1A1A;border-radius:12px;padding:16px;margin:12px 0;text-align:left">
+    <p style="color:#888;font-size:0.8rem">📊 TON DASHBOARD</p>
+    <p id="dashboard-url" style="color:#25D366;font-size:0.85rem;font-weight:600;word-break:break-all"></p>
+  </div>
+ </div>
 
 <script>
 function ajouterProduit() {
