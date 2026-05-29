@@ -5,6 +5,7 @@
 =====================================
 """
 
+from flask import Flask, request, jsonify, render_template_string, redirect, session, send_from_directory
 import os
 import json
 import requests
@@ -489,6 +490,16 @@ ADMIN_HTML = """
 </body>
 </html>
 """
+@app.route("/onboarding")
+def onboarding():
+    return send_from_directory('.', 'onboarding.html')
+
+@app.route("/")
+def index():
+    return jsonify({
+        "status": "✅ WhatsApp CRM SaaS - En ligne",
+        "version": "2.0"
+    })
 
 @app.route("/admin")
 def admin():
