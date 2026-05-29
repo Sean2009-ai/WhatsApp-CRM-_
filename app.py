@@ -511,7 +511,7 @@ def admin():
     revenus_total = sum(c["montant"] for c in commandes if c["statut"] == "ACCEPTED")
 
     from flask import render_template_string
-    return render_template_string(
+    return render_template_string()
         ADMIN_HTML,
         boutiques=boutiques_avec_stats,
         total_boutiques=len(boutiques),
