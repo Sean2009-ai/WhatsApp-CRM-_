@@ -431,19 +431,5 @@ async function soumettre() {
 
   const boutique_id = whatsapp.replace('+', '').replace(/ /g, '');
   document.getElementById('dashboard-url').textContent = 'https://whatsapp-crm-s4io.onrender.com/dashboard/' + boutique_id;
-  }
-  // Afficher succès
-  document.getElementById('formulaire').style.display = 'none';
-  document.getElementById('succes').style.display = 'block';
-  document.getElementById('ref-commande').textContent = ref;
-
-  console.log('Nouvelle commande:', {
-    ref, nom, ville, whatsapp, orange, email, produits, tarif,
-    message: document.getElementById('message_perso').value
-  });
 }
 </script>
-
-</body>
-    </html>
-    
