@@ -59,40 +59,44 @@ def onboarding():
     return render_template("onboarding.html")
 
 
-@app.route("/create-shop", methods=["POST"])
+@@app.route("/create-shop", methods=["POST"])
 def create_shop():
-    data = request.json or {}
+    try:
+        data = request.get_json(silent=True)
 
-    if not data.get("name") or not data.get("owner") or not data.get("phone"):
-        return jsonify({"error": "missing fields"}), 400
+        if not data:
+            return jsonify({"error": "no data received"}), 400
 
-    db = load_db()
+        if not data.get("name") or not data.get("owner") or not data.get("phone"):
+            return jsonify({"error": "missing fields"}), 400
 
-    shop_id = os.urandom(4).hex().upper()
+        db = load_db()
 
-    shop = {
-        "id": shop_id,
-        "name": data["name"],
-        "owner": data["owner"],
-        "phone": data["phone"],
+        shop_id = os.urandom(4).hex().upper()
 
-        "blocked": False,
-        "created_at": datetime.now().isoformat(),
-        "expires_at": (datetime.now() + timedelta(days=30)).isoformat(),
+        shop = {
+            "id": shop_id,
+            "name": data["name"],
+            "owner": data["owner"],
+            "phone": data["phone"],
+            "blocked": False,
+            "created_at": datetime.now().isoformat(),
+            "expires_at": (datetime.now() + timedelta(days=30)).isoformat(),
+            "orders": 0,
+            "revenue": 0
+        }
 
-        "orders": 0,
-        "revenue": 0
-    }
+        db["shops"].append(shop)
+        save_db(db)
 
-    db["shops"].append(shop)
-    save_db(db)
+        return jsonify({
+            "shop_id": shop_id,
+            "dashboard": f"/dashboard/{shop_id}"
+        })
 
-    return jsonify({
-        "success": True,
-        "shop_id": shop_id,
-        "dashboard_url": f"/dashboard/{shop_id}"
-    })
-
+    except Exception as e:
+        print("ERROR CREATE SHOP:", e)
+        return jsonify({"error": "server error"}), 500
 
 # ================= DASHBOARD CLIENT =================
 @app.route("/dashboard/<shop_id>")
