@@ -2,13 +2,15 @@ from flask import Flask, request, render_template, jsonify
 import json
 import os
 from datetime import datetime, timedelta
+import threading
 
 app = Flask(__name__)
 
-DB_FILE = "db.json"
+DB_FILE = os.environ.get("DB_FILE", "db.json")
+lock = threading.Lock()
 
 
-# ================= DATABASE SAFE =================
+# ================= DATABASE =================
 def load_db():
     if not os.path.exists(DB_FILE):
         return {"shops": []}
@@ -21,18 +23,16 @@ def load_db():
 
 
 def save_db(db):
-    with open(DB_FILE, "w", encoding="utf-8") as f:
-        json.dump(db, f, indent=4)
+    with lock:
+        with open(DB_FILE, "w", encoding="utf-8") as f:
+            json.dump(db, f, indent=4)
 
 
 def get_shop(db, shop_id):
-    for s in db["shops"]:
-        if s["id"] == shop_id:
-            return s
-    return None
+    return next((s for s in db["shops"] if s["id"] == shop_id), None)
 
 
-# ================= STATUS ENGINE SAFE =================
+# ================= STATUS =================
 def get_status(shop):
     try:
         if shop.get("blocked"):
@@ -46,30 +46,29 @@ def get_status(shop):
             return "EXPIRED"
 
         return "ACTIVE"
-
     except:
         return "UNKNOWN"
 
 
-# ================= HOME =================
+# ================= ROUTES =================
 @app.route("/")
 def home():
     return render_template("home.html")
 
-# ================= ONBOARDING =================
+
 @app.route("/onboarding")
 def onboarding():
     return render_template("onboarding.html")
 
 
-# ================= CREATE SHOP (SAFE) =================
+# ================= CREATE SHOP =================
 @app.route("/create-shop", methods=["POST"])
 def create_shop():
     try:
-        data = request.get_json(silent=True)
+        data = request.get_json()
 
         if not data:
-            return jsonify({"error": "no data received"}), 400
+            return jsonify({"error": "no data"}), 400
 
         if not data.get("name") or not data.get("owner") or not data.get("phone"):
             return jsonify({"error": "missing fields"}), 400
@@ -83,11 +82,9 @@ def create_shop():
             "name": data["name"],
             "owner": data["owner"],
             "phone": data["phone"],
-
             "blocked": False,
             "created_at": datetime.now().isoformat(),
             "expires_at": (datetime.now() + timedelta(days=30)).isoformat(),
-
             "orders": 0,
             "revenue": 0
         }
@@ -101,11 +98,11 @@ def create_shop():
         })
 
     except Exception as e:
-        print("CREATE SHOP ERROR:", e)
+        print("ERROR:", e)
         return jsonify({"error": "server error"}), 500
 
 
-# ================= DASHBOARD CLIENT =================
+# ================= DASHBOARD =================
 @app.route("/dashboard/<shop_id>")
 def dashboard(shop_id):
     db = load_db()
@@ -115,15 +112,16 @@ def dashboard(shop_id):
         return "Boutique introuvable"
 
     shop["status"] = get_status(shop)
-
     return render_template("dashboard.html", shop=shop)
 
 
 # ================= ADMIN =================
 @app.route("/admin")
 def admin():
-    db = load_db()
+    if request.args.get("key") != "1234":
+        return "Unauthorized", 403
 
+    db = load_db()
     shops = db.get("shops", [])
 
     for s in shops:
@@ -132,9 +130,11 @@ def admin():
     return render_template("admin.html", shops=shops)
 
 
-# ================= TOGGLE BLOCK =================
 @app.route("/admin/toggle/<shop_id>")
 def toggle(shop_id):
+    if request.args.get("key") != "1234":
+        return "Unauthorized", 403
+
     db = load_db()
     shop = get_shop(db, shop_id)
 
@@ -145,7 +145,7 @@ def toggle(shop_id):
     return jsonify({"success": True})
 
 
-# ================= API STATS =================
+# ================= STATS API =================
 @app.route("/api/stats/<shop_id>")
 def stats(shop_id):
     db = load_db()
@@ -165,4 +165,4 @@ def stats(shop_id):
 
 # ================= RUN =================
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(host="0.0.0.0", port=5000, debug=True)
