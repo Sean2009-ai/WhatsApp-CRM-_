@@ -1,82 +1,26 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Créer votre Boutique Amina</title>
-<style>
-  @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
-  :root {--vert: #25D366;--noir: #0D0D0D;--gris: #1A1A1A;--gris2: #2A2A2A;--texte: #F0F0F0;}
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  body {background: var(--noir);color: var(--texte);font-family: 'Plus Jakarta Sans', sans-serif;padding: 24px 16px;}
-  .header {text-align: center;margin-bottom: 40px;}
-  .logo {width: 80px;height: 80px;background: var(--vert);border-radius: 20px;display: flex;align-items: center;justify-content: center;font-size: 40px;margin: 0 auto 16px;}
-  h1 {font-size: 1.9rem;font-weight: 800;}
-  h1 span {color: var(--vert);}
-  .card {background: var(--gris);border-radius: 20px;padding: 24px;margin-bottom: 20px;}
-  .card-title {color: var(--vert);font-weight: 700;text-transform: uppercase;font-size: 0.85rem;margin-bottom: 16px;}
-  label {display: block;margin-bottom: 8px;font-size: 0.9rem;color: #ccc;}
-  input, select, textarea {width: 100%;padding: 14px;background: var(--gris2);border: 1px solid #444;border-radius: 12px;color: white;margin-bottom: 16px;}
-  .btn-submit {width: 100%;padding: 18px;background: var(--vert);color: black;font-weight: 800;font-size: 1.1rem;border: none;border-radius: 16px;cursor: pointer;}
-</style>
-</head>
-<body>
+<h2>Créer boutique</h2>
 
-<div class="header">
-  <div class="logo">💬</div>
-  <h1>Créez votre <span>Boutique IA</span></h1>
-  <p style="color:#25D366;font-weight:600;">Formule Unique • 35 000 FCFA / 30 jours</p>
-</div>
+<input id="name" placeholder="Nom boutique"><br><br>
+<input id="owner" placeholder="Owner"><br><br>
+<input id="phone" placeholder="Téléphone"><br><br>
 
-<div class="card">
-  <div class="card-title">📦 Votre Boutique</div>
-  <label>Nom de la boutique *</label>
-  <input type="text" id="nom_boutique" placeholder="Ex: Boutique Mode Aminata">
-
-  <label>Ville *</label>
-  <select id="ville">
-    <option value="">Choisir une ville</option>
-    <option>Ouagadougou</option>
-    <option>Bobo-Dioulasso</option>
-    <option>Koudougou</option>
-    <option>Autre</option>
-  </select>
-</div>
-
-<div class="card">
-  <div class="card-title">📱 Coordonnées</div>
-  <label>Numéro WhatsApp Business *</label>
-  <input type="tel" id="whatsapp" placeholder="70 00 00 00" maxlength="8">
-
-  <label>Numéro Mobile Money *</label>
-  <input type="tel" id="orange_money" placeholder="70 00 00 00" maxlength="8">
-
-  <label>Email *</label>
-  <input type="email" id="email" placeholder="votre@email.com">
-</div>
-
-<button class="btn-submit" onclick="soumettre()">🚀 Activer ma Boutique - 35 000 FCFA</button>
+<button onclick="create()">Créer</button>
 
 <script>
-async function soumettre() {
-  const data = {
-    nom_boutique: document.getElementById('nom_boutique').value,
-    ville: document.getElementById('ville').value,
-    whatsapp: '+226' + document.getElementById('whatsapp').value,
-    orange_money: '+226' + document.getElementById('orange_money').value,
-    email: document.getElementById('email').value
-  };
-
-  const res = await fetch('/submit-onboarding', {
-    method: 'POST',
-    headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify(data)
-  });
-  const result = await res.json();
-
-  alert('✅ Boutique créée !\nID : ' + result.boutique_id);
-  window.location.href = result.dashboard_url;
+function create(){
+    fetch("/create-shop", {
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body: JSON.stringify({
+            name:document.getElementById("name").value,
+            owner:document.getElementById("owner").value,
+            phone:document.getElementById("phone").value
+        })
+    })
+    .then(r=>r.json())
+    .then(d=>{
+        alert("Créé !");
+        window.location.href = d.dashboard;
+    })
 }
 </script>
-</body>
-</html>
