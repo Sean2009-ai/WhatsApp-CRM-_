@@ -1,9 +1,0 @@
-<h1>Admin</h1>
-
-{% for s in shops %}
-<hr>
-<p>{{ s.id }} - {{ s.name }}</p>
-<p>Status: {{ s.status }}</p>
-
-<a href="/admin/toggle/{{ s.id }}">Block/Unblock</a>
-{% endfor %}
