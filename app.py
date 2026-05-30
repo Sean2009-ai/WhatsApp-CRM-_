@@ -1,117 +1,222 @@
-from flask import Flask, request, render_template_string, jsonify, redirect
+"""
+=====================================
+  WhatsApp CRM SaaS - Version 2.0
+  Multi-boutiques | Dashboard | Admin
+=====================================
+"""
+
+from flask import Flask, request, jsonify, render_template_string, redirect, session, send_from_directory
 import os
 import json
-from datetime import datetime, timedelta
+import requests
+from twilio.twiml.messaging_response import MessagingResponse
 from twilio.rest import Client
-from groq import Groq
-import uuid
+from datetime import datetime
 
 app = Flask(__name__)
+app.secret_key = os.getenv("SECRET_KEY", "whatsapp-crm-secret-2024")
 
-# ================= CONFIG =================
-TWILIO_MAIN_SID = os.getenv("TWILIO_MAIN_ACCOUNT_SID")
-TWILIO_MAIN_TOKEN = os.getenv("TWILIO_MAIN_AUTH_TOKEN")
+# =============================================
+# CONFIG
+# =============================================
+TWILIO_ACCOUNT_SID = os.getenv("TWILIO_ACCOUNT_SID")
+TWILIO_AUTH_TOKEN  = os.getenv("TWILIO_AUTH_TOKEN")
+TWILIO_WHATSAPP_NUMBER = "whatsapp:+14155238886"
+
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
+CINETPAY_API_KEY = os.getenv("CINETPAY_API_KEY")
+CINETPAY_SITE_ID = os.getenv("CINETPAY_SITE_ID")
 
-groq_client = Groq(api_key=GROQ_API_KEY)
+ADMIN_TOKEN = os.getenv("ADMIN_TOKEN", "admin123")
+MON_NUMERO = os.getenv("MON_NUMERO", "whatsapp:+22675000000")
+
+# =============================================
+# BASE DE DONNÉES JSON
+# =============================================
 DB_FILE = "crm_data.json"
 
 def load_db():
     if os.path.exists(DB_FILE):
         with open(DB_FILE, "r", encoding="utf-8") as f:
             return json.load(f)
-    return {"boutiques": [], "commandes": []}
+    return {"boutiques": {}, "commandes": [], "clients": {}}
 
-def save_db(db):
+def save_db(data):
     with open(DB_FILE, "w", encoding="utf-8") as f:
-        json.dump(db, f, indent=4, ensure_ascii=False)
+        json.dump(data, f, ensure_ascii=False, indent=2)
 
-def envoyer_message_whatsapp(to, body):
+# =============================================
+# IA GROQ
+# =============================================
+def ask_groq(messages, system_prompt):
+    headers = {
+        "Authorization": f"Bearer {GROQ_API_KEY}",
+        "Content-Type": "application/json"
+    }
+    payload = {
+        "model": "llama-3.3-70b-versatile",
+        "max_tokens": 500,
+        "messages": [{"role": "system", "content": system_prompt}] + messages
+    }
     try:
-        client = Client(TWILIO_MAIN_SID, TWILIO_MAIN_TOKEN)
-        client.messages.create(from_='whatsapp:+14155238886', body=body, to=f'whatsapp:{to}')
-        return True
-    except:
-        return False
+        resp = requests.post(
+            "https://api.groq.com/openai/v1/chat/completions",
+            headers=headers,
+            json=payload,
+            timeout=20
+        )
+        resp.raise_for_status()
+        return resp.json()["choices"][0]["message"]["content"]
+    except Exception as e:
+        print(f"[ERREUR GROQ] {e}")
+        return "Désolé, je rencontre un problème technique. Réessaie dans un instant 🙏"
 
-# ================= TON ONBOARDING HTML ORIGINAL (Intégré) =================
-# Colle ici TON code HTML complet que tu m'as envoyé précédemment
-# (Je le mets en résumé, mais tu dois mettre la version complète)
+# =============================================
+# TWILIO
+# =============================================
+def envoyer_whatsapp(to, message):
+    try:
+        client = Client(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN)
+        client.messages.create(
+            from_=TWILIO_WHATSAPP_NUMBER,
+            body=message,
+            to=to
+        )
+        print(f"[WHATSAPP ENVOYÉ] {to}")
+    except Exception as e:
+        print(f"[ERREUR TWILIO] {e}")
 
-ONBOARDING_HTML = """[COLLE ICI TON CODE HTML COMPLET QUE TU M'AS ENVOYÉ]"""
+# =============================================
+# CINETPAY
+# =============================================
+def creer_lien_paiement(transaction_id, montant, nom, tel):
+    try:
+        payload = {
+            "apikey": CINETPAY_API_KEY,
+            "site_id": CINETPAY_SITE_ID,
+            "transaction_id": transaction_id,
+            "amount": montant,
+            "currency": "XOF",
+            "description": f"Commande - {nom}",
+            "return_url": "https://whatsapp-crm-s4io.onrender.com/merci",
+            "notify_url": "https://whatsapp-crm-s4io.onrender.com/webhook/paiement",
+            "customer_name": nom,
+            "customer_phone_number": tel,
+            "channels": "MOBILE_MONEY",
+            "lang": "fr"
+        }
+        resp = requests.post(
+            "https://api-checkout.cinetpay.com/v2/payment",
+            json=payload, timeout=20
+        )
+        data = resp.json()
+        if data.get("code") == "201":
+            return {"success": True, "lien": data["data"]["payment_url"]}
+        return {"success": False, "erreur": data.get("message")}
+    except Exception as e:
+        return {"success": False, "erreur": str(e)}
 
-# ================= ROUTE SUBMIT (Adaptée à ton formulaire) =================
-@app.route("/submit-onboarding", methods=["POST"])
-def submit_onboarding():
-    data = request.json
-    
-    boutique_id = str(uuid.uuid4())[:8].upper()
-    expiration = (datetime.now() + timedelta(days=30)).isoformat()
+# =============================================
+# PROMPT
+# =============================================
+PROMPT_DEFAULT = """
+Tu es Amina, assistante commerciale virtuelle au Burkina Faso.
+Tu réponds en français chaleureux.
+Quand prêt à payer: NOM, NUMERO, MONTANT.
+Termine avec [PRET_PAIEMENT:nom|numero|montant]
+"""
+
+# =============================================
+# HEALTH
+# =============================================
+@app.route("/health")
+def health():
+    return jsonify({"status": "ok"})
+
+# =============================================
+# WEBHOOK WHATSAPP
+# =============================================
+@app.route("/webhook/whatsapp", methods=["POST"])
+def webhook_whatsapp():
+
+    from_number = request.form.get("From", "")
+    message_body = request.form.get("Body", "").strip()
+
+    print(f"[MESSAGE] {from_number}: {message_body}")
 
     db = load_db()
-    boutique = {
-        "boutique_id": boutique_id,
-        "nom_boutique": data.get("nom_boutique"),
-        "ville": data.get("ville"),
-        "description": data.get("description"),
-        "whatsapp": data.get("whatsapp"),
-        "orange_money": data.get("orange_money"),
-        "email": data.get("email"),
-        "produits": data.get("produits"),
-        "tarif": data.get("tarif"),
-        "message_perso": data.get("message_perso"),
-        "statut": "ACTIVE",
-        "blocked": False,
-        "date_creation": datetime.now().isoformat(),
-        "date_expiration": expiration
-    }
-    
-    db["boutiques"].append(boutique)
-    save_db(db)
 
-    return jsonify({
-        "success": True,
-        "boutique_id": boutique_id,
-        "dashboard_url": f"http://127.0.0.1:5000/dashboard/{boutique_id}"
+    # ===== LOCALISATION =====
+    latitude = request.form.get("Latitude")
+    longitude = request.form.get("Longitude")
+
+    if latitude and longitude:
+
+        if from_number not in db["clients"]:
+            db["clients"][from_number] = {}
+
+        db["clients"][from_number]["localisation"] = {
+            "latitude": latitude,
+            "longitude": longitude
+        }
+
+        save_db(db)
+
+        resp = MessagingResponse()
+        resp.message("📍 Localisation reçue avec succès ! Merci 🙌")
+        return str(resp)
+
+    # ===== CLIENT =====
+    if from_number not in db["clients"]:
+        db["clients"][from_number] = {
+            "numero": from_number,
+            "historique": [],
+            "premiere_contact": datetime.now().isoformat()
+        }
+
+    client_data = db["clients"][from_number]
+
+    client_data["historique"].append({
+        "role": "user",
+        "content": message_body
     })
 
-# ================= ADMIN DASHBOARD (avec stats + blocage + alertes) =================
-@app.route("/admin/dashboard")
-def admin_dashboard():
-    db = load_db()
-    boutiques = db.get("boutiques", [])
-    now = datetime.now()
+    historique_recent = client_data["historique"][-10:]
 
-    expired = [b for b in boutiques if "date_expiration" in b and datetime.fromisoformat(b["date_expiration"]) < now]
+    # ===== BOUTIQUE =====
+    boutique_id = from_number.replace("whatsapp:+", "")
+    boutique = db.get("boutiques", {}).get(boutique_id)
 
-    html = f"""
-    <h1>📊 Admin Dashboard</h1>
-    <h2>⚠️ Abonnements Expirés : {len(expired)}</h2>
-    <table border="1" cellpadding="10" style="width:100%; border-collapse:collapse;">
-        <tr><th>ID</th><th>Boutique</th><th>Tarif</th><th>Expiration</th><th>Statut</th><th>Action</th></tr>
-    """
-    for b in boutiques:
-        exp = b.get("date_expiration", "")[:10]
-        status = b.get("statut", "ACTIVE")
-        action = f'<a href="/admin/block/{b["boutique_id"]}">Bloquer/Débloquer</a>'
-        html += f"<tr><td>{b['boutique_id']}</td><td>{b['nom_boutique']}</td><td>{b.get('tarif')}</td><td>{exp}</td><td>{status}</td><td>{action}</td></tr>"
-    html += "</table>"
-    return render_template_string(html)
+    if boutique:
+        prompt = f"""
+Tu es Amina pour {boutique['nom_boutique']}.
+Produits: {boutique['produits']}
+"""
+    else:
+        prompt = PROMPT_DEFAULT
 
-@app.route("/admin/block/<boutique_id>")
-def block_boutique(boutique_id):
-    db = load_db()
-    for b in db["boutiques"]:
-        if b["boutique_id"] == boutique_id:
-            b["blocked"] = not b.get("blocked", False)
-            b["statut"] = "BLOQUÉ" if b["blocked"] else "ACTIVE"
-            save_db(db)
-            break
-    return redirect("/admin/dashboard")
+    reponse_ia = ask_groq(historique_recent, prompt)
+    reponse_finale = reponse_ia
 
+    client_data["historique"].append({"role": "assistant", "content": reponse_finale})
+    client_data["derniere_activite"] = datetime.now().isoformat()
+
+    save_db(db)
+
+    resp = MessagingResponse()
+    resp.message(reponse_finale)
+    return str(resp)
+
+# =============================================
+# ROOT
+# =============================================
+@app.route("/")
+def index():
+    return jsonify({"status": "WhatsApp CRM actif 🚀"})
+
+# =============================================
+# ONBOARDING
+# =============================================
 @app.route("/onboarding")
 def onboarding():
-    return render_template_string(ONBOARDING_HTML)
-
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    return send_from_directory('.', 'onboarding.html')
