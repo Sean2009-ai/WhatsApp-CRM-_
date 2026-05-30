@@ -8,12 +8,16 @@ app = Flask(__name__)
 DB_FILE = "db.json"
 
 
-# ================= DB =================
+# ================= DATABASE SAFE =================
 def load_db():
     if not os.path.exists(DB_FILE):
         return {"shops": []}
-    with open(DB_FILE, "r", encoding="utf-8") as f:
-        return json.load(f)
+
+    try:
+        with open(DB_FILE, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except:
+        return {"shops": []}
 
 
 def save_db(db):
@@ -28,17 +32,21 @@ def get_shop(db, shop_id):
     return None
 
 
-# ================= STATUS ENGINE =================
-def check_status(shop):
+# ================= STATUS ENGINE SAFE =================
+def get_status(shop):
     try:
         if shop.get("blocked"):
             return "BLOCKED"
 
-        expires = datetime.fromisoformat(shop["expires_at"])
-        if datetime.now() > expires:
+        expires = shop.get("expires_at")
+        if not expires:
+            return "UNKNOWN"
+
+        if datetime.now() > datetime.fromisoformat(expires):
             return "EXPIRED"
 
         return "ACTIVE"
+
     except:
         return "UNKNOWN"
 
@@ -59,7 +67,8 @@ def onboarding():
     return render_template("onboarding.html")
 
 
-@@app.route("/create-shop", methods=["POST"])
+# ================= CREATE SHOP (SAFE) =================
+@app.route("/create-shop", methods=["POST"])
 def create_shop():
     try:
         data = request.get_json(silent=True)
@@ -79,9 +88,11 @@ def create_shop():
             "name": data["name"],
             "owner": data["owner"],
             "phone": data["phone"],
+
             "blocked": False,
             "created_at": datetime.now().isoformat(),
             "expires_at": (datetime.now() + timedelta(days=30)).isoformat(),
+
             "orders": 0,
             "revenue": 0
         }
@@ -95,8 +106,9 @@ def create_shop():
         })
 
     except Exception as e:
-        print("ERROR CREATE SHOP:", e)
+        print("CREATE SHOP ERROR:", e)
         return jsonify({"error": "server error"}), 500
+
 
 # ================= DASHBOARD CLIENT =================
 @app.route("/dashboard/<shop_id>")
@@ -107,7 +119,7 @@ def dashboard(shop_id):
     if not shop:
         return "Boutique introuvable"
 
-    shop["status"] = check_status(shop)
+    shop["status"] = get_status(shop)
 
     return render_template("dashboard.html", shop=shop)
 
@@ -117,12 +129,15 @@ def dashboard(shop_id):
 def admin():
     db = load_db()
 
-    for shop in db["shops"]:
-        shop["status"] = check_status(shop)
+    shops = db.get("shops", [])
 
-    return render_template("admin.html", shops=db["shops"])
+    for s in shops:
+        s["status"] = get_status(s)
+
+    return render_template("admin.html", shops=shops)
 
 
+# ================= TOGGLE BLOCK =================
 @app.route("/admin/toggle/<shop_id>")
 def toggle(shop_id):
     db = load_db()
@@ -144,12 +159,10 @@ def stats(shop_id):
     if not shop:
         return jsonify({"error": "not found"})
 
-    shop["status"] = check_status(shop)
-
     return jsonify({
         "orders": shop.get("orders", 0),
         "revenue": shop.get("revenue", 0),
-        "status": shop["status"],
+        "status": get_status(shop),
         "blocked": shop.get("blocked", False),
         "expires_at": shop.get("expires_at")
     })
