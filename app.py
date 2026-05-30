@@ -54,12 +54,7 @@ def get_status(shop):
 # ================= HOME =================
 @app.route("/")
 def home():
-    return """
-    <h1>WhatsApp SaaS V2.1</h1>
-    <a href='/onboarding'>Créer boutique</a><br>
-    <a href='/admin'>Admin</a>
-    """
-
+    return render_template("home.html")
 
 # ================= ONBOARDING =================
 @app.route("/onboarding")
