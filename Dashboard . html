@@ -1,0 +1,10 @@
+<h1>Dashboard</h1>
+
+<p>Nom: {{ shop.name }}</p>
+<p>Owner: {{ shop.owner }}</p>
+<p>Phone: {{ shop.phone }}</p>
+
+<p>Status: {{ shop.status }}</p>
+<p>Orders: {{ shop.orders }}</p>
+<p>Revenue: {{ shop.revenue }}</p>
+<p>Expire: {{ shop.expires_at }}</p>
