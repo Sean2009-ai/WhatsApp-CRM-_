@@ -335,16 +335,6 @@
       <span></span>
     </div>
 
-    <div id="produits-list">
-      <div class="produit-row">
-        <input type="text" placeholder="Ex: Robe wax" class="prod-nom" maxlength="100" />
-        <input type="number" placeholder="15000" class="prod-prix" min="0" max="9999999" />
-        <button class="btn-remove" onclick="supprimerProduit(this)">✕</button>
-      </div>
-    </div>
-
-    <button class="btn-add" onclick="ajouterProduit()">+ Ajouter un produit</button>
-  </div>
 
   <!-- Contact -->
   <div class="card">
@@ -580,7 +570,7 @@
 
     // Notification WhatsApp
     const msg = `🆕 Nouvelle boutique!\n\n🏪 ${nom}\n📍 ${ville}\n📱 ${whatsappFull}\n💰 Mobile Money: ${orangeFull}\n🛍️ Produits: ${produits.join(', ')}\n💎 Formule: ${tarif}\n✅ PAIEMENT CONFIRMÉ`;
-    window.open(`https://wa.me/22675XXXXXXX?text=${encodeURIComponent(msg)}`, '_blank');
+    window.open(`https://wa.me/22603141464?text=${encodeURIComponent(msg)}`, '_blank');
 
     // Envoyer au backend
     try {
