@@ -1,4 +1,3 @@
-cat > /mnt/user-data/outputs/whatsapp_crm_v2/app.py << 'ENDOFFILE'
 """
 =====================================
   WhatsApp CRM SaaS - Version 3.0
@@ -861,4 +860,3 @@ def index():
 if __name__ == "__main__":
     port = int(os.getenv("PORT", 5000))
     app.run(host="0.0.0.0", port=port, debug=True)
-ENDOFFILE
