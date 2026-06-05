@@ -430,7 +430,10 @@ Quand tu as TOUTES ces infos, termine avec:
 def health():
     verifier_expirations()
     return jsonify({"status": "ok"})
-
+@app.route("/")
+def index():
+    with open("onboarding.html", "r", encoding="utf-8") as f:
+        return f.read()
 # =============================================
 # WEBHOOK PAIEMENT CINETPAY
 # =============================================
