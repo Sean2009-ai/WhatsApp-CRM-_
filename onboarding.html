@@ -158,31 +158,45 @@
 
   .btn-add:hover { background: rgba(37, 211, 102, 0.2); }
 
-  .tarif-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 12px;
-    margin-bottom: 20px;
-  }
-
-  .tarif-option {
-    border: 2px solid var(--gris2);
+  /* Tarif unique */
+  .tarif-unique {
+    background: linear-gradient(135deg, rgba(37,211,102,0.12), rgba(37,211,102,0.04));
+    border: 2px solid rgba(37,211,102,0.5);
     border-radius: 16px;
-    padding: 16px;
-    cursor: pointer;
-    transition: border-color 0.2s;
-    position: relative;
+    padding: 20px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
   }
 
-  .tarif-option.selected {
-    border-color: var(--vert);
-    background: rgba(37, 211, 102, 0.05);
+  .tarif-unique .tarif-info .tarif-name {
+    font-weight: 800;
+    font-size: 1rem;
+    margin-bottom: 4px;
   }
 
-  .tarif-option input[type="radio"] { position: absolute; opacity: 0; width: 0; }
-  .tarif-name { font-weight: 700; font-size: 0.95rem; margin-bottom: 4px; }
-  .tarif-price { color: var(--vert); font-weight: 800; font-size: 1.1rem; }
-  .tarif-desc { color: #888; font-size: 0.75rem; margin-top: 6px; line-height: 1.4; }
+  .tarif-unique .tarif-info .tarif-desc {
+    color: #888;
+    font-size: 0.8rem;
+    line-height: 1.5;
+  }
+
+  .tarif-unique .tarif-price {
+    color: var(--vert);
+    font-weight: 800;
+    font-size: 1.4rem;
+    white-space: nowrap;
+    text-align: right;
+  }
+
+  .tarif-unique .tarif-price span {
+    display: block;
+    font-size: 0.7rem;
+    color: #888;
+    font-weight: 500;
+  }
 
   /* Paywall */
   .paywall-card {
@@ -269,6 +283,61 @@
   .info-card .value.gold { color: var(--accent); }
   .info-card .hint { font-size: 0.72rem; color: #555; margin-top: 4px; }
 
+  /* QR Code */
+  .qr-card {
+    background: var(--gris);
+    border-radius: 16px;
+    padding: 20px;
+    margin: 12px 0;
+    border: 1px solid var(--gris2);
+    text-align: center;
+  }
+
+  .qr-card .label {
+    font-size: 0.75rem;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 12px;
+  }
+
+  .qr-wrapper {
+    background: #fff;
+    border-radius: 12px;
+    padding: 12px;
+    display: inline-block;
+    margin-bottom: 12px;
+  }
+
+  .qr-wrapper img {
+    width: 180px;
+    height: 180px;
+    display: block;
+  }
+
+  .qr-status {
+    font-size: 0.8rem;
+    color: #888;
+    margin-bottom: 8px;
+  }
+
+  .qr-status.connected { color: var(--vert); font-weight: 700; }
+
+  .btn-refresh-qr {
+    background: rgba(37,211,102,0.1);
+    border: 1px solid rgba(37,211,102,0.3);
+    color: var(--vert);
+    border-radius: 10px;
+    padding: 8px 16px;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+
+  .btn-refresh-qr:hover { background: rgba(37,211,102,0.2); }
+
   .btn-dashboard {
     display: block;
     width: 100%;
@@ -335,6 +404,15 @@
       <span></span>
     </div>
 
+    <div id="produits-list">
+      <div class="produit-row">
+        <input type="text" placeholder="Nom du produit" class="prod-nom" maxlength="100" />
+        <input type="number" placeholder="Prix FCFA" class="prod-prix" min="0" />
+        <button class="btn-remove" onclick="supprimerProduit(this)">✕</button>
+      </div>
+    </div>
+    <button class="btn-add" onclick="ajouterProduit()">+ Ajouter un produit</button>
+  </div>
 
   <!-- Contact -->
   <div class="card">
@@ -365,22 +443,18 @@
     </div>
   </div>
 
-  <!-- Tarif -->
+  <!-- Tarif unique -->
   <div class="card">
-    <div class="card-title">💰 Choisir votre formule</div>
+    <div class="card-title">💰 Votre formule</div>
 
-    <div class="tarif-grid">
-      <div class="tarif-option selected" onclick="choisirTarif(this, 'basique')">
-        <input type="radio" name="tarif" value="basique" checked />
-        <div class="tarif-name">Essentiel</div>
-        <div class="tarif-price">20 000 FCFA</div>
-        <div class="tarif-desc">Numéro WhatsApp partagé · Amina répond 24h/24</div>
+    <div class="tarif-unique">
+      <div class="tarif-info">
+        <div class="tarif-name">Formule Complète</div>
+        <div class="tarif-desc">Votre propre numéro WhatsApp dédié · IA active 24h/24 · Dashboard CRM inclus</div>
       </div>
-      <div class="tarif-option" onclick="choisirTarif(this, 'premium')">
-        <input type="radio" name="tarif" value="premium" />
-        <div class="tarif-name">Premium</div>
-        <div class="tarif-price">50 000 FCFA</div>
-        <div class="tarif-desc">Votre propre numéro WhatsApp dédié · Clé en main</div>
+      <div class="tarif-price">
+        50 000 FCFA
+        <span>/ mois</span>
       </div>
     </div>
 
@@ -416,18 +490,17 @@
 <div class="success" id="succes">
   <div class="icon">🎉</div>
   <h2>Boutique activée !</h2>
-  <p>Voici vos informations :</p>
+  <p>Connectez maintenant votre WhatsApp personnel</p>
 
-  <div class="info-card">
-    <div class="label">📱 Numéro WhatsApp Bot</div>
-    <div class="value vert">+1 415 523 8886</div>
-    <div class="hint">Partagez ce numéro à vos clients</div>
-  </div>
-
-  <div class="info-card">
-    <div class="label">🔑 Code d'activation (1 seule fois)</div>
-    <div class="value gold">join furniture-scared</div>
-    <div class="hint">Envoyez ce code sur WhatsApp pour activer Amina</div>
+  <!-- QR Code Green API -->
+  <div class="qr-card">
+    <div class="label">📱 Scanner pour connecter votre WhatsApp</div>
+    <div class="qr-wrapper">
+      <img id="qr-img" src="" alt="QR Code" />
+    </div>
+    <div class="qr-status" id="qr-status">⏳ En attente du scan...</div>
+    <button class="btn-refresh-qr" onclick="rafraichirQR()">🔄 Rafraîchir le QR</button>
+    <p style="font-size:0.72rem;color:#555;margin-top:8px">Le QR expire toutes les 20 secondes</p>
   </div>
 
   <div class="info-card">
@@ -442,6 +515,9 @@
 
 <script>
   let paiementConfirme = false;
+  let idInstance = '';
+  let apiTokenInstance = '';
+  let qrPollingInterval = null;
 
   function ajouterProduit() {
     const list = document.getElementById('produits-list');
@@ -460,12 +536,6 @@
     if (rows.length > 1) btn.parentElement.remove();
   }
 
-  function choisirTarif(el, valeur) {
-    document.querySelectorAll('.tarif-option').forEach(o => o.classList.remove('selected'));
-    el.classList.add('selected');
-    el.querySelector('input[type="radio"]').checked = true;
-  }
-
   function sanitize(str) {
     const div = document.createElement('div');
     div.appendChild(document.createTextNode(str));
@@ -474,17 +544,16 @@
 
   function payerAvec(operateur) {
     const nom = document.getElementById('nom_boutique').value.trim();
-    const tarif = document.querySelector('input[name="tarif"]:checked').value;
-    const montant = tarif === 'premium' ? 50000 : 20000;
+    const montant = 50000;
 
     if (!nom) {
       alert('Veuillez d\'abord remplir le nom de votre boutique');
       return;
     }
 
-    const message = `Paiement boutique ${sanitize(nom)} - ${montant} FCFA - Formule ${tarif}`;
-    const numeroMoov = '75000000'; // Remplace par ton numéro Moov
-    const numeroOrange = '70000000'; // Remplace par ton numéro Orange
+    const message = `Paiement boutique ${sanitize(nom)} - ${montant} FCFA/mois`;
+    const numeroMoov = '75000000';
+    const numeroOrange = '70000000';
 
     const numero = operateur === 'orange' ? numeroOrange : numeroMoov;
 
@@ -505,6 +574,46 @@
 
   function validerEmail(email) {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  }
+
+  // Récupère et affiche le QR code depuis Green API
+  async function rafraichirQR() {
+    if (!idInstance || !apiTokenInstance) return;
+
+    document.getElementById('qr-status').textContent = '⏳ Chargement...';
+    document.getElementById('qr-status').className = 'qr-status';
+
+    try {
+      const res = await fetch(`https://api.green-api.com/waInstance${idInstance}/qr/${apiTokenInstance}`);
+      const data = await res.json();
+
+      if (data.type === 'qrCode') {
+        document.getElementById('qr-img').src = 'data:image/png;base64,' + data.message;
+        document.getElementById('qr-status').textContent = '⏳ Scannez avec votre WhatsApp';
+        document.getElementById('qr-status').className = 'qr-status';
+      } else if (data.type === 'alreadyLogged') {
+        document.getElementById('qr-status').textContent = '✅ WhatsApp connecté !';
+        document.getElementById('qr-status').className = 'qr-status connected';
+        document.getElementById('qr-img').src = '';
+        document.getElementById('qr-wrapper') && (document.querySelector('.qr-wrapper').style.display = 'none');
+        clearInterval(qrPollingInterval);
+      }
+    } catch (e) {
+      document.getElementById('qr-status').textContent = '❌ Erreur de chargement';
+    }
+  }
+
+  // Polling automatique toutes les 20s
+  function demarrerPollingQR() {
+    rafraichirQR();
+    qrPollingInterval = setInterval(() => {
+      const status = document.getElementById('qr-status').textContent;
+      if (!status.includes('connecté')) {
+        rafraichirQR();
+      } else {
+        clearInterval(qrPollingInterval);
+      }
+    }, 20000);
   }
 
   async function soumettre() {
@@ -564,17 +673,16 @@
       }
     });
 
-    const tarif = document.querySelector('input[name="tarif"]:checked').value;
     const whatsappFull = '+226' + whatsapp;
     const orangeFull = '+226' + orange;
 
     // Notification WhatsApp
-    const msg = `🆕 Nouvelle boutique!\n\n🏪 ${nom}\n📍 ${ville}\n📱 ${whatsappFull}\n💰 Mobile Money: ${orangeFull}\n🛍️ Produits: ${produits.join(', ')}\n💎 Formule: ${tarif}\n✅ PAIEMENT CONFIRMÉ`;
+    const msg = `🆕 Nouvelle boutique!\n\n🏪 ${nom}\n📍 ${ville}\n📱 ${whatsappFull}\n💰 Mobile Money: ${orangeFull}\n🛍️ Produits: ${produits.join(', ')}\n💎 Formule: 50 000 FCFA/mois\n✅ PAIEMENT CONFIRMÉ`;
     window.open(`https://wa.me/22603141464?text=${encodeURIComponent(msg)}`, '_blank');
 
     // Envoyer au backend
     try {
-      await fetch('/submit-onboarding', {
+      const response = await fetch('/submit-onboarding', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({
@@ -584,10 +692,17 @@
           orange_money: orangeFull,
           email: email,
           produits: produits.join(', '),
-          tarif: tarif,
+          tarif: 'premium_50000',
           message_perso: sanitize(document.getElementById('message_perso').value)
         })
       });
+
+      // Récupère idInstance et apiTokenInstance depuis le backend
+      const result = await response.json();
+      if (result.idInstance && result.apiTokenInstance) {
+        idInstance = result.idInstance;
+        apiTokenInstance = result.apiTokenInstance;
+      }
     } catch(e) {
       console.log('Backend error:', e);
     }
@@ -600,9 +715,15 @@
     document.getElementById('succes').style.display = 'block';
     document.getElementById('dashboard-url').textContent = dashUrl;
     document.getElementById('btn-dashboard').href = dashUrl;
+
+    // Démarrer le QR polling si on a les credentials
+    if (idInstance && apiTokenInstance) {
+      demarrerPollingQR();
+    } else {
+      document.getElementById('qr-status').textContent = '⚠️ Configurer idInstance dans le backend';
+    }
   }
 </script>
 
 </body>
 </html>
-
