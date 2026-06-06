@@ -179,7 +179,12 @@ def verifier_expirations():
 PROMPT_DEFAULT = """
 Tu es Amina, une assistante commerciale virtuelle au Burkina Faso.
 Tu réponds en français chaleureux style Afrique de l'Ouest.
-Quand le client veut commander, collecte: NOM COMPLET, PRODUIT, ADRESSE, NUMÉRO MOBILE MONEY, MONTANT.
+Quand le client veut commander, collecte dans cet ordre:
+1. NOM COMPLET
+2. PRODUIT commandé
+3. NUMÉRO MOBILE MONEY
+4. MONTANT total
+5. LOCALISATION: demande-lui d'envoyer sa localisation WhatsApp (bouton 📎 → Localisation).
 Quand tu as tout: [PRET_PAIEMENT:nom|produit|adresse|numero|montant]
 """
 
@@ -249,9 +254,26 @@ def webhook_green_api(boutique_id):
     if not from_number.startswith("+"):
         from_number = "+" + from_number
 
-    message_body = sanitize(data.get("messageData", {}).get("textMessageData", {}).get("textMessage", "").strip())
-    if not message_body:
-        return jsonify({"status": "ok"})
+    message_data = data.get("messageData", {})
+    message_type = message_data.get("typeMessage", "")
+
+    # Détecter la localisation WhatsApp
+    localisation_text = None
+    if message_type == "locationMessage":
+        loc  = message_data.get("locationMessageData", {})
+        lat  = loc.get("latitude")
+        lng  = loc.get("longitude")
+        name = loc.get("nameLocation", "")
+        if lat and lng:
+            maps_url = f"https://maps.google.com/?q={lat},{lng}"
+            localisation_text = f"[LOCALISATION:{lat}|{lng}|{maps_url}]"
+            message_body = f"Voici ma localisation : {maps_url}" + (f" ({name})" if name else "")
+        else:
+            return jsonify({"status": "ok"})
+    else:
+        message_body = sanitize(message_data.get("textMessageData", {}).get("textMessage", "").strip())
+        if not message_body:
+            return jsonify({"status": "ok"})
 
     db = load_db()
     client_key = f"{boutique_id}_{from_number}"
@@ -259,6 +281,18 @@ def webhook_green_api(boutique_id):
         db["clients"][client_key] = {"numero": from_number, "boutique_id": boutique_id, "historique": [], "premiere_contact": datetime.now().isoformat()}
 
     client_data = db["clients"][client_key]
+
+    # Stocker la localisation dans le profil client si reçue
+    if localisation_text:
+        loc_parts = localisation_text.replace("[LOCALISATION:", "").replace("]", "").split("|")
+        if len(loc_parts) >= 3:
+            client_data["localisation"] = {
+                "latitude":  loc_parts[0],
+                "longitude": loc_parts[1],
+                "maps_url":  loc_parts[2],
+                "date":      datetime.now().isoformat()
+            }
+
     client_data["historique"].append({"role": "user", "content": message_body})
     historique_recent = client_data["historique"][-10:]
 
@@ -275,8 +309,13 @@ def webhook_green_api(boutique_id):
 Tu réponds en français chaleureux style Afrique de l'Ouest.
 Produits: {boutique['produits']}
 {boutique.get('message_perso', '')}
-Quand le client commande, collecte: NOM, PRODUIT, ADRESSE, MOBILE MONEY, MONTANT.
-Quand tu as tout: [PRET_PAIEMENT:nom|produit|adresse|numero|montant]"""
+Quand le client commande, collecte dans cet ordre:
+1. NOM COMPLET
+2. PRODUIT commandé
+3. NUMÉRO MOBILE MONEY
+4. MONTANT total
+5. LOCALISATION: demande-lui d'envoyer sa localisation WhatsApp (bouton 📎 → Localisation) pour la livraison. Si le client a déjà envoyé sa localisation, utilise-la directement.
+Quand tu as tout (y compris la localisation): [PRET_PAIEMENT:nom|produit|adresse|numero|montant]"""
     else:
         prompt = PROMPT_DEFAULT
 
@@ -297,10 +336,16 @@ Quand tu as tout: [PRET_PAIEMENT:nom|produit|adresse|numero|montant]"""
             transaction_id = f"CMD_{int(datetime.now().timestamp())}"
             paiement = creer_lien_paiement(transaction_id, montant, nom, numero)
 
+            # Récupérer la localisation si disponible
+            maps_url = client_data.get("localisation", {}).get("maps_url", "")
+            adresse_finale = f"{adresse} 📍 {maps_url}" if maps_url else adresse
+
             db["commandes"].append({
                 "transaction_id": transaction_id, "client": from_number,
                 "boutique_id": boutique_id, "nom": nom, "produit": produit,
-                "adresse": adresse, "numero_mobile_money": numero,
+                "adresse": adresse_finale,
+                "maps_url": maps_url,
+                "numero_mobile_money": numero,
                 "montant": montant, "statut": "EN_ATTENTE", "date": datetime.now().isoformat()
             })
 
@@ -588,7 +633,13 @@ DASHBOARD_CLIENT_HTML = """
     <div class="nom">{{ cmd.nom }}</div>
     <div class="montant">{{ "{:,}".format(cmd.montant) }} F</div>
   </div>
-  <div class="detail">🛍️ {{ cmd.produit }} · 📍 {{ cmd.adresse }}</div>
+  <div class="detail">🛍️ {{ cmd.produit }} · 
+    {% if cmd.maps_url %}
+    <a href="{{ cmd.maps_url }}" target="_blank" style="color:var(--vert)">📍 Voir sur Maps</a>
+    {% else %}
+    📍 {{ cmd.adresse }}
+    {% endif %}
+  </div>
   <div class="detail" style="margin-top:4px">
     <span class="badge-statut {{ cmd.statut.lower() }}">{{ cmd.statut }}</span>
     · {{ cmd.date[:10] }}
